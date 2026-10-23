@@ -1,0 +1,123 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ==========================================================================
+   THE GAME CENTER — MULTI-THEME DESIGN TOKEN ARCHITECTURE
+   Default Flagship Theme: Obsidian Cyber (inspired by official Shield Emblem)
+   Prepared for future full theme switching via [data-theme="..."]
+   ========================================================================== */
+
+:root,
+[data-theme='obsidian-cyber'] {
+  --tgc-bg-canvas: 7 10 18;
+  --tgc-bg-surface: 12 17 29;
+  --tgc-bg-elevated: 17 24 39;
+  --tgc-bg-card: 15 21 35;
+  --tgc-border: 38 52 79;
+  --tgc-accent-primary: 0 229 255;
+  --tgc-accent-secondary: 99 102 241;
+  --tgc-accent-tertiary: 168 85 247;
+  --tgc-text-primary: 241 245 249;
+  --tgc-text-secondary: 148 163 184;
+  --tgc-text-muted: 100 116 139;
+}
+
+/* Prepared preset tokens for future Theme Switcher stage */
+[data-theme='crimson-vanguard'] {
+  --tgc-bg-canvas: 12 8 12;
+  --tgc-bg-surface: 20 13 19;
+  --tgc-bg-elevated: 29 19 27;
+  --tgc-bg-card: 24 15 22;
+  --tgc-border: 68 36 50;
+  --tgc-accent-primary: 244 63 94;
+  --tgc-accent-secondary: 249 115 22;
+  --tgc-accent-tertiary: 236 72 153;
+  --tgc-text-primary: 248 250 252;
+  --tgc-text-secondary: 168 162 158;
+  --tgc-text-muted: 120 113 108;
+}
+
+[data-theme='emerald-matrix'] {
+  --tgc-bg-canvas: 6 13 11;
+  --tgc-bg-surface: 10 21 18;
+  --tgc-bg-elevated: 15 31 26;
+  --tgc-bg-card: 12 25 21;
+  --tgc-border: 30 64 52;
+  --tgc-accent-primary: 16 185 129;
+  --tgc-accent-secondary: 6 182 212;
+  --tgc-accent-tertiary: 132 204 22;
+  --tgc-text-primary: 240 253 244;
+  --tgc-text-secondary: 148 163 184;
+  --tgc-text-muted: 100 116 139;
+}
+
+@layer base {
+  html {
+    background-color: rgb(var(--tgc-bg-canvas));
+    color: rgb(var(--tgc-text-primary));
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    scroll-behavior: smooth;
+    color-scheme: dark;
+  }
+
+  body {
+    min-height: 100vh;
+    background-color: rgb(var(--tgc-bg-canvas));
+    color: rgb(var(--tgc-text-primary));
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+/* Tactical subtle background grid & radial atmospheric lighting */
+.tgc-cyber-backdrop {
+  background-image:
+    radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.085) 0%, transparent 42%),
+    radial-gradient(circle at 85% 10%, rgba(99, 102, 241, 0.095) 0%, transparent 45%),
+    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+}
+
+.tgc-glass-panel {
+  background: linear-gradient(
+    165deg,
+    rgba(17, 24, 39, 0.88) 0%,
+    rgba(11, 16, 28, 0.94) 100%
+  );
+  backdrop-filter: blur(16px);
+  border: 1px solid rgba(148, 163, 184, 0.12);
+}
+
+.tgc-card-hover {
+  transition: transform 0.22s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.22s ease,
+    box-shadow 0.22s ease;
+}
+
+.tgc-card-hover:hover {
+  transform: translateY(-3px);
+  border-color: rgba(0, 229, 255, 0.36);
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.78),
+    0 0 22px -8px rgba(0, 229, 255, 0.22);
+}
+
+/* Custom sleek dark scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgb(var(--tgc-bg-canvas));
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.35);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 229, 255, 0.45);
+}
