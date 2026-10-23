@@ -4,6 +4,8 @@ import {
   CatalogGame,
   GameStatus,
   LibraryStats,
+  Profile,
+  UserActivityEvent,
   UserGame,
   UserGameEvent,
   UserGameInput,
@@ -64,6 +66,7 @@ export async function listAllCatalogGames(): Promise<CatalogGame[]> {
   const { data, error } = await supabase
     .from('catalog_games')
     .select('*')
+    .order('popularity_score', { ascending: false })
     .order('title', { ascending: true });
 
   if (error) {
@@ -71,6 +74,106 @@ export async function listAllCatalogGames(): Promise<CatalogGame[]> {
   }
 
   return (data ?? []) as CatalogGame[];
+}
+
+export async function listRecentUserActivity(
+  userId: string,
+  limit = 15
+): Promise<UserActivityEvent[]> {
+  const { data, error } = await supabase
+    .from('user_game_events')
+    .select('*, user_games(title, cover_url, platform)')
+    .eq('user_id', userId)
+    .order('occurred_at', { ascending: false })
+    .limit(limit);
+
+  if (error) {
+    throw new Error('Erro ao carregar atividade recente do perfil.');
+  }
+
+  return (data ?? []).map((row: Record<string, unknown>) => {
+    const joined = (row.user_games ?? {}) as {
+      title?: string;
+      cover_url?: string | null;
+      platform?: string;
+    };
+    return {
+      id: String(row.id),
+      user_game_id: String(row.user_game_id),
+      user_id: String(row.user_id),
+      event_type: row.event_type as UserActivityEvent['event_type'],
+      from_status: (row.from_status as string | null) ?? null,
+      to_status: (row.to_status as string | null) ?? null,
+      title: String(row.title ?? ''),
+      description: String(row.description ?? ''),
+      metadata:
+        typeof row.metadata === 'object' && row.metadata !== null
+          ? (row.metadata as Record<string, unknown>)
+          : {},
+      occurred_at: String(row.occurred_at),
+      game_title: joined.title || 'Jogo da Biblioteca',
+      game_cover_url: joined.cover_url ?? null,
+      game_platform: joined.platform || 'PC',
+    };
+  });
+}
+
+export function computeDiscoveryRecommendations(
+  catalog: CatalogGame[],
+  userGames: UserGame[],
+  profile?: Pick<Profile, 'favorite_genre' | 'favorite_platform'> | null
+): {
+  popular: CatalogGame[];
+  recommended: CatalogGame[];
+} {
+  const ownedSet = new Set(userGames.map((g) => g.title.trim().toLowerCase()));
+
+  // Top popular across the platform
+  const popular = [...catalog]
+    .sort((a, b) => (b.popularity_score ?? 85) - (a.popularity_score ?? 85))
+    .slice(0, 8);
+
+  // Build affinity score based on favorite genre/platform + user's highest-rated genres
+  const genreAffinity = new Map<string, number>();
+  if (profile?.favorite_genre) {
+    genreAffinity.set(profile.favorite_genre.toLowerCase(), 30);
+  }
+  for (const g of userGames) {
+    const key = g.genre.trim().toLowerCase();
+    const boost =
+      g.status === 'Zerei' || g.status === 'Jogando'
+        ? 15 + (g.rating && g.rating >= 8 ? 10 : 0)
+        : 6;
+    genreAffinity.set(key, (genreAffinity.get(key) ?? 0) + boost);
+  }
+
+  const favPlatform = profile?.favorite_platform?.toLowerCase() ?? '';
+
+  const unownedScored = catalog
+    .filter((item) => !ownedSet.has(item.title.trim().toLowerCase()))
+    .map((item) => {
+      let score = item.popularity_score ?? 85;
+      const itemGenre = item.genre.toLowerCase();
+      for (const [affGenre, pts] of genreAffinity.entries()) {
+        if (itemGenre.includes(affGenre) || affGenre.includes(itemGenre)) {
+          score += pts;
+        }
+      }
+      if (
+        favPlatform &&
+        item.platforms?.some((p) => p.toLowerCase().includes(favPlatform))
+      ) {
+        score += 12;
+      }
+      return { item, score };
+    })
+    .sort((a, b) => b.score - a.score)
+    .map((entry) => entry.item);
+
+  return {
+    popular,
+    recommended: (unownedScored.length > 0 ? unownedScored : popular).slice(0, 8),
+  };
 }
 
 export async function listUserGames(userId: string): Promise<UserGame[]> {

@@ -19,6 +19,7 @@ import {
   X,
 } from 'lucide-react';
 import { BrandLogo } from '@/components/brand/BrandLogo';
+import { PlayerAvatar } from '@/components/social/PlayerAvatar';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
 import { useSocial } from '@/contexts/SocialContext';
@@ -33,7 +34,7 @@ interface NavItem {
 const PRIMARY_NAV: NavItem[] = [
   { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
   { href: '/biblioteca', label: 'Minha Biblioteca', Icon: Library },
-  { href: '/jogos', label: 'Explorar Jogos', Icon: Compass },
+  { href: '/jogos', label: 'Descoberta', Icon: Compass },
   { href: '/perfil', label: 'Meu Perfil', Icon: UserCircle2 },
 ];
 
@@ -109,27 +110,27 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         {/* Player Identity Card */}
         <div className="border-b border-white/10 p-4">
           <div className="rounded-2xl border border-cyan-500/20 bg-gradient-to-br from-slate-900/95 via-slate-900/80 to-indigo-950/40 p-3.5">
-            <div className="flex items-center gap-3">
-              {profile?.avatar_url ? (
-                <img
-                  src={profile.avatar_url}
-                  alt={profile.display_name}
-                  className="h-11 w-11 rounded-xl border border-cyan-400/40 object-cover"
-                />
-              ) : (
-                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl border border-cyan-400/40 bg-gradient-to-br from-cyan-500/25 to-indigo-500/30 font-display text-base font-bold text-cyan-200">
-                  {initials}
-                </div>
-              )}
+            <Link href="/perfil" className="flex items-center gap-3 group">
+              <PlayerAvatar
+                name={
+                  profile?.display_name ||
+                  profile?.username ||
+                  user?.email ||
+                  'TG'
+                }
+                avatarUrl={profile?.avatar_url}
+                size="md"
+                highlight
+              />
               <div className="min-w-0 flex-1">
-                <p className="truncate font-display text-base font-bold text-white">
-                  {profile?.display_name || ' Carregando...'}
+                <p className="truncate font-display text-base font-bold text-white transition group-hover:text-cyan-300">
+                  {profile?.display_name || 'Carregando...'}
                 </p>
                 <p className="truncate text-xs text-cyan-300">
                   @{profile?.username || 'jogador'}
                 </p>
               </div>
-            </div>
+            </Link>
 
             {profile?.player_code && (
               <button

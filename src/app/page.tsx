@@ -47,7 +47,7 @@ export default function LandingPage() {
             {!loading && user ? (
               <Link
                 href="/dashboard"
-                className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-4 py-2 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-neon-cyan transition hover:brightness-110 sm:px-5 sm:py-2.5"
+                className="tgc-btn-primary inline-flex items-center gap-2 rounded-xl px-4 py-2 text-xs font-bold uppercase tracking-wider sm:px-5 sm:py-2.5"
               >
                 <span>Ir para Central ({profile?.username || 'Conta'})</span>
                 <ArrowRight className="h-4 w-4" />
@@ -62,7 +62,7 @@ export default function LandingPage() {
                 </Link>
                 <Link
                   href="/cadastro"
-                  className="inline-flex items-center gap-1.5 rounded-xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-3.5 py-2 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-neon-cyan transition hover:brightness-110 sm:px-5 sm:py-2.5"
+                  className="tgc-btn-primary inline-flex items-center gap-1.5 rounded-xl px-3.5 py-2 text-xs font-bold uppercase tracking-wider sm:px-5 sm:py-2.5"
                 >
                   <span>Criar Conta</span>
                   <ArrowRight className="h-3.5 w-3.5" />
@@ -100,7 +100,7 @@ export default function LandingPage() {
             <div className="mt-8 flex flex-wrap items-center gap-3.5">
               <Link
                 href={user ? '/dashboard' : '/cadastro'}
-                className="inline-flex items-center gap-2.5 rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-6 py-3.5 text-sm font-bold uppercase tracking-wider text-slate-950 shadow-neon-cyan transition hover:brightness-110"
+                className="tgc-btn-primary inline-flex items-center gap-2.5 rounded-2xl px-6 py-3.5 text-sm font-bold uppercase tracking-wider"
               >
                 <span>{user ? 'Acessar Meu Dashboard' : 'Começar Gratuitamente'}</span>
                 <ArrowRight className="h-4 w-4" />
@@ -267,9 +267,9 @@ export default function LandingPage() {
               },
               {
                 Icon: Layers,
-                title: 'Fundação Pronta para Evolução',
+                title: 'Rede Social Privada & Multi-Temas',
                 description:
-                  'Navegação estruturada e sistema de tokens preparado para futuros temas personalizados, lista de amigos e mensagens.',
+                  'Conecte-se com amigos por @username ou Player ID, converse em DMs ou grupos privados e personalize toda a plataforma com 7 temas visuais exclusivos.',
               },
             ].map(({ Icon, title, description }) => (
               <div
@@ -326,12 +326,12 @@ export default function LandingPage() {
               </span>
             </div>
             <h3 className="mt-3 font-display text-2xl font-bold text-white sm:text-3xl">
-              Biblioteca hoje, rede gamer completa amanhã
+              Biblioteca, descoberta, amigos e chat em um só lugar
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-slate-300">
-              Comece catalogando todos os jogos que já zerou e sua fila de próximos
-              desafios. Sua conta já nasce pronta para as próximas etapas de conexões de
-              amigos, mensagens diretas e customização de temas.
+              Catalogue os jogos que já zerou, descubra títulos populares recomendados
+              para o seu perfil, conecte-se com amigos e personalize a interface com sua
+              identidade visual favorita.
             </p>
             <div className="mt-6">
               <Link

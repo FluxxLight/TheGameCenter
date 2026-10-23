@@ -4,7 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
 import {
   ArrowRight,
-  CalendarCheck2,
+  Bookmark,
+  Check,
   Clock,
   Compass,
   Flame,
@@ -15,10 +16,11 @@ import {
   Sparkles,
   Star,
   Trophy,
-  UserCircle2,
+  UserPlus,
   Users,
 } from 'lucide-react';
 import { GameFormModal } from '@/components/library/GameFormModal';
+import { PlayerAvatar } from '@/components/social/PlayerAvatar';
 import { GameCover } from '@/components/ui/GameCover';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useToast } from '@/components/ui/ToastProvider';
@@ -26,75 +28,90 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useSocial } from '@/contexts/SocialContext';
 import {
   addUserGame,
+  computeDiscoveryRecommendations,
   computeLibraryStats,
+  listAllCatalogGames,
   listUserGames,
 } from '@/services/libraryService';
-import { UserGame, UserGameInput } from '@/types/database';
-
-function formatBrDate(iso: string | null): string {
-  if (!iso) return '';
-  const clean = iso.slice(0, 10).split('-');
-  if (clean.length !== 3) return iso;
-  return `${clean[2]}/${clean[1]}/${clean[0]}`;
-}
+import { CatalogGame, UserGame, UserGameInput } from '@/types/database';
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
-  const { friendsCount, pendingIncomingCount, unreadMessagesCount } = useSocial();
+  const {
+    friends,
+    incomingRequests,
+    conversations,
+    pendingIncomingCount,
+    unreadMessagesCount,
+  } = useSocial();
   const { showToast } = useToast();
 
   const [games, setGames] = useState<UserGame[]>([]);
-  const [loadingGames, setLoadingGames] = useState(true);
-  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [catalog, setCatalog] = useState<CatalogGame[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [selectedCatalogGame, setSelectedCatalogGame] =
+    useState<CatalogGame | null>(null);
 
-  const fetchGames = useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!user) return;
-    setLoadingGames(true);
+    setLoading(true);
     try {
-      const list = await listUserGames(user.id);
-      setGames(list);
+      const [userList, catalogList] = await Promise.all([
+        listUserGames(user.id),
+        listAllCatalogGames(),
+      ]);
+      setGames(userList);
+      setCatalog(catalogList);
     } catch (err) {
       showToast(
-        err instanceof Error ? err.message : 'Erro ao carregar dados do dashboard.',
+        err instanceof Error ? err.message : 'Erro ao carregar dados da Home.',
         'error'
       );
     } finally {
-      setLoadingGames(false);
+      setLoading(false);
     }
   }, [user, showToast]);
 
   useEffect(() => {
-    fetchGames();
-  }, [fetchGames]);
+    loadData();
+  }, [loadData]);
 
   const stats = useMemo(() => computeLibraryStats(games), [games]);
 
   const playingGames = useMemo(
-    () => games.filter((g) => g.status === 'Jogando').slice(0, 6),
-    [games]
-  );
-
-  const recentlyAddedGames = useMemo(
     () =>
       [...games]
-        .sort(
-          (a, b) =>
-            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-        )
-        .slice(0, 6),
+        .filter((g) => g.status === 'Jogando')
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+        .slice(0, 4),
     [games]
   );
 
   const completedGames = useMemo(
     () =>
-      games
+      [...games]
         .filter((g) => g.status === 'Zerei')
-        .sort((a, b) => {
-          const da = a.completed_at || a.updated_at;
-          const db = b.completed_at || b.updated_at;
-          return db.localeCompare(da);
-        })
-        .slice(0, 6),
+        .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+        .slice(0, 4),
+    [games]
+  );
+
+  const recentlyAdded = useMemo(
+    () =>
+      [...games]
+        .sort((a, b) => b.created_at.localeCompare(a.created_at))
+        .slice(0, 5),
+    [games]
+  );
+
+  const { recommended } = useMemo(
+    () => computeDiscoveryRecommendations(catalog, games, profile),
+    [catalog, games, profile]
+  );
+
+  const ownedTitles = useMemo(
+    () => new Set(games.map((g) => g.title.trim().toLowerCase())),
     [games]
   );
 
@@ -105,328 +122,200 @@ export default function DashboardPage() {
     showToast(`"${created.title}" adicionado à sua biblioteca!`, 'success');
   };
 
+  const displayName =
+    profile?.display_name || profile?.username || 'Jogador';
+
   return (
     <div className="space-y-8">
-      {/* Hero Command Header */}
-      <section className="tgc-glass-panel relative overflow-hidden rounded-3xl border border-cyan-400/25 p-6 sm:p-8">
-        <div className="pointer-events-none absolute -right-16 -top-16 h-56 w-56 rounded-full bg-cyan-500/10 blur-3xl" />
-        <div className="relative z-10 flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
-          <div>
+      {/* Compact Welcome Hero */}
+      <section className="tgc-glass-panel relative overflow-hidden rounded-3xl p-6 sm:p-8">
+        <div
+          aria-hidden="true"
+          className="pointer-events-none absolute -right-24 -top-24 h-64 w-64 rounded-full bg-cyan-500/10 blur-[85px]"
+        />
+        <div className="relative flex flex-col justify-between gap-5 lg:flex-row lg:items-center">
+          <div className="space-y-2">
             <div className="inline-flex items-center gap-2 rounded-full border border-cyan-400/30 bg-cyan-500/10 px-3 py-1 text-xs font-semibold text-cyan-200">
-              <Sparkles className="h-3.5 w-3.5 text-cyan-400" />
-              <span>Command Center • @{profile?.username || 'jogador'}</span>
+              <Sparkles className="h-3.5 w-3.5" />
+              <span>Central do Jogador • {profile?.player_code || 'TGC'}</span>
             </div>
-            <h1 className="mt-3 font-display text-3xl font-bold uppercase tracking-wide text-white sm:text-4xl">
-              Olá, {profile?.display_name || profile?.username || 'Jogador'}
+            <h1 className="font-display text-3xl font-bold uppercase tracking-wide text-white sm:text-4xl">
+              Bem-vindo, <span className="text-cyan-300">{displayName}</span>
             </h1>
-            <p className="mt-1 max-w-2xl text-sm text-slate-400">
-              Acompanhe os jogos em andamento, seu histórico de conquistas e as
-              estatísticas da sua biblioteca pessoal.
+            <p className="max-w-xl text-sm text-slate-300">
+              Acompanhe seus jogos em andamento, conquistas concluídas, conversas com
+              amigos e recomendações sob medida.
             </p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3">
             <button
               type="button"
-              onClick={() => setAddModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-5 py-3 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-neon-cyan transition hover:brightness-110"
+              onClick={() => {
+                setSelectedCatalogGame(null);
+                setModalOpen(true);
+              }}
+              className="tgc-btn-primary inline-flex items-center gap-2 rounded-2xl px-5 py-3 text-xs font-bold uppercase tracking-wider"
             >
-              <Plus className="h-4 w-4" />
+              <Plus className="h-4 w-4 stroke-[2.5]" />
               <span>Adicionar Jogo</span>
             </button>
             <Link
-              href="/biblioteca"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-5 py-3 text-xs font-semibold uppercase tracking-wider text-slate-200 transition hover:border-cyan-400/40 hover:bg-white/10"
+              href="/jogos"
+              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-4 py-3 text-xs font-semibold uppercase tracking-wider text-slate-100 transition hover:border-cyan-400/40 hover:bg-white/10"
             >
-              <Library className="h-4 w-4 text-cyan-300" />
-              <span>Minha Biblioteca</span>
+              <Compass className="h-4 w-4 text-cyan-400" />
+              <span>Descobrir Jogos</span>
             </Link>
           </div>
         </div>
       </section>
 
-      {/* Telemetry Stats Cards */}
-      <section className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-        <div className="tgc-glass-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Total de Jogos
-            </span>
-            <Gamepad2 className="h-4 w-4 text-cyan-400" />
-          </div>
-          <p className="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">
-            {stats.totalGames}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            {stats.backlogCount} na fila • {stats.droppedCount} abandonados
-          </p>
-        </div>
+      {/* 1. Estatísticas */}
+      <section aria-label="Estatísticas da biblioteca">
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-5">
+          <Link
+            href="/biblioteca"
+            className="tgc-glass-panel tgc-card-hover rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-400">Biblioteca</span>
+              <Library className="h-4 w-4 text-cyan-400" />
+            </div>
+            <p className="mt-2 font-display text-3xl font-bold text-white">
+              {loading ? '...' : stats.totalGames}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">Jogos cadastrados</p>
+          </Link>
 
-        <div className="tgc-glass-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Jogando Agora
-            </span>
-            <Flame className="h-4 w-4 text-cyan-300" />
-          </div>
-          <p className="mt-2 font-display text-3xl font-bold text-cyan-300 sm:text-4xl">
-            {stats.playingCount}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">Campanhas ativas no momento</p>
-        </div>
+          <Link
+            href="/biblioteca"
+            className="tgc-glass-panel tgc-card-hover rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-400">Jogando</span>
+              <Gamepad2 className="h-4 w-4 text-cyan-400" />
+            </div>
+            <p className="mt-2 font-display text-3xl font-bold text-cyan-300">
+              {loading ? '...' : stats.playingCount}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">Em andamento</p>
+          </Link>
 
-        <div className="tgc-glass-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Jogos Zerados
-            </span>
-            <Trophy className="h-4 w-4 text-emerald-400" />
-          </div>
-          <p className="mt-2 font-display text-3xl font-bold text-emerald-300 sm:text-4xl">
-            {stats.completedCount}
-          </p>
-          <p className="mt-1 text-xs text-slate-400">
-            Taxa de conclusão: {stats.completionRate}%
-          </p>
-        </div>
+          <Link
+            href="/biblioteca"
+            className="tgc-glass-panel tgc-card-hover rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-400">Concluídos</span>
+              <Trophy className="h-4 w-4 text-emerald-400" />
+            </div>
+            <p className="mt-2 font-display text-3xl font-bold text-emerald-300">
+              {loading ? '...' : stats.completedCount}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">Status Zerei</p>
+          </Link>
 
-        <div className="tgc-glass-panel rounded-2xl p-4 sm:p-5">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-semibold uppercase tracking-wider text-slate-400">
-              Horas &amp; Nota Média
-            </span>
-            <Clock className="h-4 w-4 text-indigo-400" />
-          </div>
-          <p className="mt-2 font-display text-3xl font-bold text-white sm:text-4xl">
-            {stats.totalHours}h
-          </p>
-          <p className="mt-1 flex items-center gap-1 text-xs text-amber-300">
-            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-            <span>
+          <Link
+            href="/biblioteca"
+            className="tgc-glass-panel tgc-card-hover rounded-2xl p-4"
+          >
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-400">Fila</span>
+              <Bookmark className="h-4 w-4 text-indigo-400" />
+            </div>
+            <p className="mt-2 font-display text-3xl font-bold text-indigo-300">
+              {loading ? '...' : stats.backlogCount}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">Quero Jogar</p>
+          </Link>
+
+          <div className="tgc-glass-panel col-span-2 rounded-2xl p-4 sm:col-span-1">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-slate-400">Tempo Total</span>
+              <Clock className="h-4 w-4 text-amber-400" />
+            </div>
+            <p className="mt-2 font-display text-3xl font-bold text-amber-300">
+              {loading ? '...' : `${stats.totalHours.toFixed(1)}h`}
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-400">
               {stats.averageRating !== null
                 ? `Média ${stats.averageRating}/10`
-                : 'Sem notas ainda'}
-            </span>
-          </p>
+                : 'Horas acumuladas'}
+            </p>
+          </div>
         </div>
       </section>
 
-      {loadingGames ? (
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[1, 2, 3].map((n) => (
-            <div
-              key={n}
-              className="h-40 animate-pulse rounded-2xl border border-white/10 bg-slate-900/60"
-            />
-          ))}
-        </div>
-      ) : games.length === 0 ? (
-        /* Empty Library Onboarding State */
-        <section className="tgc-glass-panel rounded-3xl border border-dashed border-cyan-400/30 p-8 text-center sm:p-12">
-          <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl border border-cyan-400/30 bg-cyan-500/10 text-cyan-300">
-            <Gamepad2 className="h-7 w-7" />
-          </div>
-          <h2 className="mt-4 font-display text-2xl font-bold uppercase tracking-wide text-white">
-            Sua biblioteca gamer está pronta para o primeiro título
-          </h2>
-          <p className="mx-auto mt-2 max-w-lg text-sm text-slate-400">
-            Adicione jogos pesquisando no catálogo integrado ou cadastre qualquer jogo
-            manualmente para acompanhar horas jogadas, notas e linha do tempo pessoal.
-          </p>
-          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
-            <button
-              type="button"
-              onClick={() => setAddModalOpen(true)}
-              className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-cyan-400 to-indigo-500 px-6 py-3 text-xs font-bold uppercase tracking-wider text-slate-950 shadow-neon-cyan transition hover:brightness-110"
-            >
-              <Plus className="h-4 w-4" />
-              <span>Adicionar Primeiro Jogo</span>
-            </button>
-            <Link
-              href="/jogos"
-              className="inline-flex items-center gap-2 rounded-2xl border border-white/15 bg-white/5 px-6 py-3 text-xs font-semibold uppercase tracking-wider text-slate-200 transition hover:bg-white/10"
-            >
-              <Compass className="h-4 w-4 text-cyan-300" />
-              <span>Explorar Catálogo</span>
-            </Link>
-          </div>
-        </section>
-      ) : (
-        <div className="space-y-9">
-          {/* 1. Jogando Agora */}
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Flame className="h-5 w-5 text-cyan-400" />
+      {/* Main Two-Column Balanced Workspace */}
+      <div className="grid grid-cols-1 gap-7 xl:grid-cols-12">
+        {/* Left Primary Column (8 cols): Jogando, Concluídos, Adicionados Recentemente */}
+        <div className="space-y-7 xl:col-span-8">
+          {/* 2. Jogos em Andamento */}
+          <section className="space-y-3.5">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Gamepad2 className="h-5 w-5 text-cyan-400" />
                 <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
-                  Jogando Agora
-                </h2>
-              </div>
-              <Link
-                href="/biblioteca?status=Jogando"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:underline"
-              >
-                <span>Ver todos</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            {playingGames.length === 0 ? (
-              <div className="tgc-glass-panel rounded-2xl p-6 text-sm text-slate-400">
-                Nenhum jogo marcado como <strong className="text-cyan-300">Jogando</strong>{' '}
-                no momento. Altere o status de um jogo na sua biblioteca ou adicione um
-                novo título!
-              </div>
-            ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {playingGames.map((game) => (
-                  <Link
-                    key={game.id}
-                    href={`/biblioteca/${game.id}`}
-                    className="tgc-glass-panel tgc-card-hover group flex items-center gap-4 rounded-2xl p-3.5"
-                  >
-                    <GameCover
-                      title={game.title}
-                      coverUrl={game.cover_url}
-                      genre={game.genre}
-                      platform={game.platform}
-                      className="h-24 w-16 shrink-0 rounded-xl border border-white/10"
-                    />
-                    <div className="min-w-0 flex-1">
-                      <StatusBadge status={game.status} size="sm" />
-                      <h3 className="mt-1.5 truncate font-display text-lg font-bold text-white group-hover:text-cyan-300">
-                        {game.title}
-                      </h3>
-                      <p className="truncate text-xs text-slate-400">
-                        {game.platform} • {game.genre}
-                      </p>
-                      <div className="mt-2 flex items-center gap-3 font-mono text-xs text-slate-300">
-                        <span className="inline-flex items-center gap-1">
-                          <Clock className="h-3.5 w-3.5 text-cyan-400" />
-                          {game.hours_played}h
-                        </span>
-                        {game.rating !== null && (
-                          <span className="inline-flex items-center gap-1 text-amber-300">
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            {game.rating.toFixed(1)}
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </section>
-
-          {/* 2. Adicionados Recentemente */}
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Sparkles className="h-5 w-5 text-indigo-400" />
-                <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
-                  Adicionados Recentemente
+                  Jogos em Andamento
                 </h2>
               </div>
               <Link
                 href="/biblioteca"
                 className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:underline"
               >
-                <span>Abrir biblioteca completa</span>
+                <span>Ver biblioteca</span>
                 <ArrowRight className="h-3.5 w-3.5" />
               </Link>
             </div>
 
-            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
-              {recentlyAddedGames.map((game) => (
-                <Link
-                  key={game.id}
-                  href={`/biblioteca/${game.id}`}
-                  className="tgc-glass-panel tgc-card-hover group flex flex-col overflow-hidden rounded-2xl"
-                >
-                  <div className="relative aspect-[3/4] w-full overflow-hidden">
-                    <GameCover
-                      title={game.title}
-                      coverUrl={game.cover_url}
-                      genre={game.genre}
-                      platform={game.platform}
-                      className="h-full w-full"
-                    />
-                    <div className="absolute left-2 top-2">
-                      <StatusBadge status={game.status} size="sm" />
-                    </div>
-                  </div>
-                  <div className="p-3">
-                    <p className="truncate font-display text-sm font-bold text-white group-hover:text-cyan-300">
-                      {game.title}
-                    </p>
-                    <p className="truncate text-[11px] text-slate-400">{game.platform}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </section>
-
-          {/* 3. Jogos Zerados */}
-          <section>
-            <div className="mb-4 flex items-center justify-between">
-              <div className="flex items-center gap-2.5">
-                <Trophy className="h-5 w-5 text-emerald-400" />
-                <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
-                  Jogos Zerados
-                </h2>
+            {loading ? (
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                {[1, 2].map((n) => (
+                  <div
+                    key={n}
+                    className="h-28 animate-pulse rounded-2xl border border-white/10 bg-slate-900/50"
+                  />
+                ))}
               </div>
-              <Link
-                href="/biblioteca?status=Zerei"
-                className="inline-flex items-center gap-1 text-xs font-semibold text-emerald-300 hover:underline"
-              >
-                <span>Ver galeria de zerados</span>
-                <ArrowRight className="h-3.5 w-3.5" />
-              </Link>
-            </div>
-
-            {completedGames.length === 0 ? (
-              <div className="tgc-glass-panel rounded-2xl p-6 text-sm text-slate-400">
-                Quando você concluir uma campanha e marcar como{' '}
-                <strong className="text-emerald-300">Zerei</strong>, seus troféus de
-                conclusão aparecerão aqui.
+            ) : playingGames.length === 0 ? (
+              <div className="tgc-glass-panel rounded-2xl border border-dashed border-white/15 p-6 text-center">
+                <p className="text-sm font-medium text-slate-200">
+                  Nenhum jogo marcado como &quot;Jogando&quot; no momento.
+                </p>
+                <p className="mt-1 text-xs text-slate-400">
+                  Marque um título como &quot;Jogando&quot; para acompanhar progresso e horas aqui.
+                </p>
               </div>
             ) : (
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
-                {completedGames.map((game) => (
+              <div className="grid grid-cols-1 gap-3.5 sm:grid-cols-2">
+                {playingGames.map((game) => (
                   <Link
                     key={game.id}
                     href={`/biblioteca/${game.id}`}
-                    className="tgc-glass-panel tgc-card-hover group flex items-center gap-4 rounded-2xl border-emerald-500/20 p-3.5"
+                    className="tgc-glass-panel tgc-card-hover flex items-center gap-3.5 rounded-2xl p-3.5"
                   >
                     <GameCover
                       title={game.title}
                       coverUrl={game.cover_url}
                       genre={game.genre}
                       platform={game.platform}
-                      className="h-24 w-16 shrink-0 rounded-xl border border-emerald-400/25"
+                      className="h-24 w-16 shrink-0 rounded-xl border border-white/15"
                     />
-                    <div className="min-w-0 flex-1">
-                      <div className="flex items-center justify-between gap-2">
-                        <StatusBadge status="Zerei" size="sm" />
-                        {game.rating !== null && (
-                          <span className="inline-flex items-center gap-1 font-mono text-xs font-bold text-amber-300">
-                            <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
-                            {game.rating.toFixed(1)}/10
-                          </span>
-                        )}
+                    <div className="min-w-0 flex-1 space-y-2">
+                      <div>
+                        <h3 className="truncate font-display text-lg font-bold text-white">
+                          {game.title}
+                        </h3>
+                        <p className="truncate text-xs text-slate-400">
+                          {game.platform} • {game.genre}
+                        </p>
                       </div>
-                      <h3 className="mt-1.5 truncate font-display text-lg font-bold text-white group-hover:text-emerald-300">
-                        {game.title}
-                      </h3>
-                      <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-slate-400">
-                        <span>{game.hours_played}h</span>
-                        {game.completed_at && (
-                          <span className="inline-flex items-center gap-1 text-emerald-300">
-                            <CalendarCheck2 className="h-3.5 w-3.5" />
-                            {formatBrDate(game.completed_at)}
-                          </span>
-                        )}
+                      <div className="flex flex-wrap items-center justify-between gap-2 pt-0.5">
+                        <StatusBadge status={game.status} size="sm" />
+                        <span className="font-mono text-xs font-semibold text-cyan-300">
+                          {Number(game.hours_played || 0)}h jogadas
+                        </span>
                       </div>
                     </div>
                   </Link>
@@ -434,105 +323,387 @@ export default function DashboardPage() {
               </div>
             )}
           </section>
+
+          {/* 3. Jogos Concluídos & 4. Adicionados Recentemente side-by-side */}
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
+            {/* Jogos Concluídos */}
+            <section className="tgc-glass-panel flex flex-col justify-between rounded-2xl p-5">
+              <div>
+                <div className="mb-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Trophy className="h-4 w-4 text-emerald-400" />
+                    <h2 className="font-display text-xl font-bold uppercase tracking-wide text-white">
+                      Jogos Concluídos
+                    </h2>
+                  </div>
+                  <span className="rounded-full border border-emerald-400/30 bg-emerald-500/15 px-2.5 py-0.5 font-mono text-xs font-bold text-emerald-300">
+                    {stats.completedCount}
+                  </span>
+                </div>
+
+                {completedGames.length === 0 ? (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    Seus jogos finalizados (&quot;Zerei&quot;) aparecerão em destaque aqui.
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {completedGames.map((game) => (
+                      <Link
+                        key={game.id}
+                        href={`/biblioteca/${game.id}`}
+                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 transition hover:border-emerald-400/40"
+                      >
+                        <GameCover
+                          title={game.title}
+                          coverUrl={game.cover_url}
+                          genre={game.genre}
+                          platform={game.platform}
+                          className="h-12 w-9 shrink-0 rounded-lg border border-white/10"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm font-bold text-white">
+                            {game.title}
+                          </p>
+                          <p className="truncate text-[11px] text-slate-400">
+                            {game.platform} • {Number(game.hours_played || 0)}h
+                          </p>
+                        </div>
+                        {game.rating !== null && (
+                          <span className="inline-flex items-center gap-0.5 rounded-md border border-amber-400/30 bg-amber-500/15 px-1.5 py-0.5 font-mono text-[11px] font-bold text-amber-300">
+                            <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                            {Number(game.rating).toFixed(1)}
+                          </span>
+                        )}
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/perfil"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-emerald-300 hover:underline"
+              >
+                <span>Ver mural completo no Perfil</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </section>
+
+            {/* Adicionados Recentemente */}
+            <section className="tgc-glass-panel flex flex-col justify-between rounded-2xl p-5">
+              <div>
+                <div className="mb-3.5 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <Clock className="h-4 w-4 text-cyan-400" />
+                    <h2 className="font-display text-xl font-bold uppercase tracking-wide text-white">
+                      Adicionados Recentes
+                    </h2>
+                  </div>
+                </div>
+
+                {recentlyAdded.length === 0 ? (
+                  <p className="py-6 text-center text-xs text-slate-400">
+                    Adicione seu primeiro jogo para inaugurar sua biblioteca!
+                  </p>
+                ) : (
+                  <div className="space-y-2.5">
+                    {recentlyAdded.slice(0, 4).map((game) => (
+                      <Link
+                        key={game.id}
+                        href={`/biblioteca/${game.id}`}
+                        className="flex items-center gap-3 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 transition hover:border-cyan-400/40"
+                      >
+                        <GameCover
+                          title={game.title}
+                          coverUrl={game.cover_url}
+                          genre={game.genre}
+                          platform={game.platform}
+                          className="h-12 w-9 shrink-0 rounded-lg border border-white/10"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-display text-sm font-bold text-white">
+                            {game.title}
+                          </p>
+                          <p className="truncate text-[11px] text-slate-400">
+                            {game.platform}
+                          </p>
+                        </div>
+                        <StatusBadge status={game.status} size="sm" />
+                      </Link>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href="/biblioteca"
+                className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:underline"
+              >
+                <span>Abrir biblioteca completa</span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
+            </section>
+          </div>
         </div>
-      )}
 
-      {/* Shortcuts to Library, Profile & Active Social Hub */}
-      <section className="border-t border-white/10 pt-6">
-        <h2 className="mb-4 font-display text-xl font-bold uppercase tracking-wider text-slate-200">
-          Atalhos da Plataforma &amp; Rede Social Gamer
-        </h2>
-        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-          <Link
-            href="/biblioteca"
-            className="tgc-glass-panel tgc-card-hover flex items-center gap-3.5 rounded-2xl p-4"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-cyan-500/15 text-cyan-300">
-              <Library className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-base font-bold text-white">
-                Minha Biblioteca
-              </p>
-              <p className="text-xs text-slate-400">Gerenciar coleção e status</p>
-            </div>
-          </Link>
-
-          <Link
-            href="/perfil"
-            className="tgc-glass-panel tgc-card-hover flex items-center gap-3.5 rounded-2xl p-4"
-          >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-300">
-              <UserCircle2 className="h-5 w-5" />
-            </div>
-            <div>
-              <p className="font-display text-base font-bold text-white">
-                Perfil &amp; Player Code
-              </p>
-              <p className="font-mono text-xs text-cyan-300">
-                {profile?.player_code || 'Identidade TGC'}
-              </p>
-            </div>
-          </Link>
-
-          <Link
-            href="/amigos"
-            className="tgc-glass-panel tgc-card-hover flex items-center justify-between gap-3 rounded-2xl p-4"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
-                <Users className="h-5 w-5" />
+        {/* Right Social Column (4 cols): 5. Amigos & 6. Mensagens */}
+        <div className="space-y-6 xl:col-span-4">
+          {/* 5. Amigos */}
+          <section className="tgc-glass-panel rounded-2xl p-5">
+            <div className="mb-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Users className="h-4 w-4 text-cyan-400" />
+                <h2 className="font-display text-xl font-bold uppercase tracking-wide text-white">
+                  Amigos
+                </h2>
+                {pendingIncomingCount > 0 && (
+                  <span className="rounded-full border border-amber-400/40 bg-amber-500/20 px-2 py-0.5 text-[10px] font-bold text-amber-200">
+                    {pendingIncomingCount} pedido(s)
+                  </span>
+                )}
               </div>
-              <div>
-                <p className="font-display text-base font-bold text-white">
-                  Amigos ({friendsCount})
-                </p>
-                <p className="text-xs text-indigo-300">
-                  {pendingIncomingCount > 0
-                    ? `${pendingIncomingCount} ${pendingIncomingCount === 1 ? 'solicitação pendente' : 'solicitações pendentes'}`
-                    : 'Buscar por código único'}
-                </p>
-              </div>
+              <Link
+                href="/amigos"
+                className="text-xs font-semibold text-cyan-300 hover:underline"
+              >
+                Gerenciar
+              </Link>
             </div>
-            {pendingIncomingCount > 0 && (
-              <span className="rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-xs font-bold text-slate-950 shadow-neon-cyan">
-                {pendingIncomingCount}
-              </span>
+
+            {incomingRequests.length > 0 && (
+              <Link
+                href="/amigos"
+                className="mb-3 flex items-center justify-between rounded-xl border border-amber-400/35 bg-amber-500/10 px-3 py-2 text-xs text-amber-200 transition hover:bg-amber-500/20"
+              >
+                <span>
+                  Você tem {incomingRequests.length} solicitação(ões) pendente(s)
+                </span>
+                <ArrowRight className="h-3.5 w-3.5" />
+              </Link>
             )}
-          </Link>
 
-          <Link
-            href="/mensagens"
-            className="tgc-glass-panel tgc-card-hover flex items-center justify-between gap-3 rounded-2xl p-4"
-          >
-            <div className="flex items-center gap-3.5">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300">
-                <MessageSquare className="h-5 w-5" />
-              </div>
-              <div>
-                <p className="font-display text-base font-bold text-white">
-                  Mensagens &amp; Grupos
+            {friends.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 p-4 text-center">
+                <p className="text-xs text-slate-300">
+                  Conecte-se com outros jogadores por @username ou Player ID.
                 </p>
-                <p className="text-xs text-purple-300">
-                  {unreadMessagesCount > 0
-                    ? `${unreadMessagesCount} ${unreadMessagesCount === 1 ? 'nova mensagem' : 'novas mensagens'}`
-                    : 'Chats diretos e grupos privados'}
-                </p>
+                <Link
+                  href="/amigos"
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-cyan-400/35 bg-cyan-500/15 px-3 py-1.5 text-xs font-semibold text-cyan-200 hover:bg-cyan-500/25"
+                >
+                  <UserPlus className="h-3.5 w-3.5" />
+                  <span>Adicionar Amigos</span>
+                </Link>
               </div>
-            </div>
-            {unreadMessagesCount > 0 && (
-              <span className="rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-xs font-bold text-slate-950 shadow-neon-cyan">
-                {unreadMessagesCount}
-              </span>
+            ) : (
+              <div className="space-y-2">
+                {friends.slice(0, 4).map((f) => (
+                  <Link
+                    key={f.friendship_id}
+                    href="/amigos"
+                    className="flex items-center justify-between gap-2.5 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 transition hover:border-cyan-400/35"
+                  >
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <PlayerAvatar
+                        name={f.user.display_name || f.user.username}
+                        avatarUrl={f.user.avatar_url}
+                        size="sm"
+                      />
+                      <div className="min-w-0">
+                        <p className="truncate text-xs font-semibold text-white">
+                          {f.user.display_name || f.user.username}
+                        </p>
+                        <p className="truncate text-[11px] text-cyan-300">
+                          @{f.user.username}
+                        </p>
+                      </div>
+                    </div>
+                    <span className="shrink-0 font-mono text-[10px] text-slate-400">
+                      {f.user.favorite_platform}
+                    </span>
+                  </Link>
+                ))}
+              </div>
             )}
+          </section>
+
+          {/* 6. Mensagens */}
+          <section className="tgc-glass-panel rounded-2xl p-5">
+            <div className="mb-3.5 flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <MessageSquare className="h-4 w-4 text-indigo-400" />
+                <h2 className="font-display text-xl font-bold uppercase tracking-wide text-white">
+                  Mensagens
+                </h2>
+                {unreadMessagesCount > 0 && (
+                  <span className="rounded-full border border-cyan-400/40 bg-cyan-500/20 px-2 py-0.5 text-[10px] font-bold text-cyan-200">
+                    {unreadMessagesCount} nova(s)
+                  </span>
+                )}
+              </div>
+              <Link
+                href="/mensagens"
+                className="text-xs font-semibold text-cyan-300 hover:underline"
+              >
+                Abrir Chat
+              </Link>
+            </div>
+
+            {conversations.length === 0 ? (
+              <div className="rounded-xl border border-dashed border-white/10 p-4 text-center">
+                <p className="text-xs text-slate-300">
+                  Nenhuma conversa ativa ainda. Crie um grupo privado ou envie uma DM!
+                </p>
+                <Link
+                  href="/mensagens"
+                  className="mt-2.5 inline-flex items-center gap-1.5 rounded-lg border border-indigo-400/35 bg-indigo-500/15 px-3 py-1.5 text-xs font-semibold text-indigo-200 hover:bg-indigo-500/25"
+                >
+                  <MessageSquare className="h-3.5 w-3.5" />
+                  <span>Ir para Mensagens</span>
+                </Link>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {conversations.slice(0, 4).map((conv) => {
+                  const counterpart = conv.participants.find(
+                    (p) => p.id !== user?.id
+                  );
+                  const title =
+                    conv.kind === 'group'
+                      ? conv.name || 'Grupo Privado'
+                      : counterpart?.display_name ||
+                        counterpart?.username ||
+                        'Conversa Direta';
+                  return (
+                    <Link
+                      key={conv.id}
+                      href={`/mensagens?c=${conv.id}`}
+                      className="flex items-center justify-between gap-2.5 rounded-xl border border-white/10 bg-slate-950/60 p-2.5 transition hover:border-cyan-400/35"
+                    >
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-1.5">
+                          <span className="truncate text-xs font-semibold text-white">
+                            {title}
+                          </span>
+                          {conv.kind === 'group' && (
+                            <span className="rounded bg-indigo-500/20 px-1.5 py-0.5 text-[9px] font-bold uppercase text-indigo-300">
+                              Grupo
+                            </span>
+                          )}
+                        </div>
+                        <p className="mt-0.5 truncate text-[11px] text-slate-400">
+                          {conv.last_message_preview || 'Sem mensagens ainda'}
+                        </p>
+                      </div>
+                      {conv.unread_count > 0 && (
+                        <span className="tgc-btn-primary flex h-5 min-w-[20px] items-center justify-center rounded-full px-1.5 text-[10px] font-bold">
+                          {conv.unread_count}
+                        </span>
+                      )}
+                    </Link>
+                  );
+                })}
+              </div>
+            )}
+          </section>
+        </div>
+      </div>
+
+      {/* 7. Jogos Populares e Recomendados */}
+      <section className="space-y-4">
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <Flame className="h-5 w-5 text-cyan-400" />
+              <h2 className="font-display text-2xl font-bold uppercase tracking-wide text-white">
+                Recomendados &amp; Populares
+              </h2>
+            </div>
+            <p className="text-xs text-slate-400">
+              Sugestões do catálogo do The Game Center para expandir sua coleção
+            </p>
+          </div>
+          <Link
+            href="/jogos"
+            className="inline-flex items-center gap-1 text-xs font-semibold text-cyan-300 hover:underline"
+          >
+            <span>Explorar todos os jogos</span>
+            <ArrowRight className="h-3.5 w-3.5" />
           </Link>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3.5 sm:grid-cols-3 lg:grid-cols-6">
+          {recommended.slice(0, 6).map((item) => {
+            const isOwned = ownedTitles.has(item.title.trim().toLowerCase());
+            return (
+              <div
+                key={item.id}
+                className="tgc-glass-panel tgc-card-hover flex flex-col overflow-hidden rounded-2xl"
+              >
+                <div className="relative aspect-[2/3] w-full overflow-hidden">
+                  <GameCover
+                    title={item.title}
+                    coverUrl={item.cover_url}
+                    genre={item.genre}
+                    platform={item.default_platform}
+                    className="h-full w-full"
+                  />
+                  {item.critic_score && (
+                    <span className="absolute right-2 top-2 inline-flex items-center gap-0.5 rounded-md border border-amber-400/35 bg-black/80 px-1.5 py-0.5 font-mono text-[10px] font-bold text-amber-300">
+                      <Star className="h-2.5 w-2.5 fill-amber-400 text-amber-400" />
+                      {Number(item.critic_score).toFixed(1)}
+                    </span>
+                  )}
+                </div>
+                <div className="flex flex-1 flex-col justify-between gap-2.5 p-3">
+                  <div>
+                    <h3 className="line-clamp-1 font-display text-sm font-bold text-white">
+                      {item.title}
+                    </h3>
+                    <p className="truncate text-[11px] text-slate-400">
+                      {item.genre}
+                    </p>
+                  </div>
+                  <button
+                    type="button"
+                    disabled={isOwned}
+                    onClick={() => {
+                      setSelectedCatalogGame(item);
+                      setModalOpen(true);
+                    }}
+                    className={`inline-flex items-center justify-center gap-1 rounded-xl py-1.5 text-xs font-semibold transition ${
+                      isOwned
+                        ? 'cursor-default border border-emerald-400/30 bg-emerald-500/15 text-emerald-300'
+                        : 'border border-cyan-400/35 bg-cyan-500/15 text-cyan-200 hover:bg-cyan-500/25'
+                    }`}
+                  >
+                    {isOwned ? (
+                      <>
+                        <Check className="h-3.5 w-3.5" />
+                        <span>Na Coleção</span>
+                      </>
+                    ) : (
+                      <>
+                        <Plus className="h-3.5 w-3.5" />
+                        <span>+ Biblioteca</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </section>
 
       <GameFormModal
-        open={addModalOpen}
+        open={modalOpen}
+        initialCatalogGame={selectedCatalogGame}
         existingLibrary={games}
-        onClose={() => setAddModalOpen(false)}
+        onClose={() => {
+          setModalOpen(false);
+          setSelectedCatalogGame(null);
+        }}
         onSubmit={handleAddGame}
       />
     </div>

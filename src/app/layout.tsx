@@ -10,7 +10,7 @@ import '@fontsource/jetbrains-mono/500.css';
 import '@fontsource/jetbrains-mono/700.css';
 import './globals.css';
 import { AuthProvider } from '@/contexts/AuthContext';
-import { ThemeProvider } from '@/contexts/ThemeContext';
+import { ThemeSyncProvider } from '@/contexts/ThemeContext';
 import { ToastProvider } from '@/components/ui/ToastProvider';
 
 export const metadata: Metadata = {
@@ -35,11 +35,11 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" data-theme="obsidian-cyber">
       <body className="antialiased selection:bg-cyan-400/25 selection:text-cyan-200">
-        <ThemeProvider>
-          <AuthProvider>
+        <AuthProvider>
+          <ThemeSyncProvider>
             <ToastProvider>{children}</ToastProvider>
-          </AuthProvider>
-        </ThemeProvider>
+          </ThemeSyncProvider>
+        </AuthProvider>
       </body>
     </html>
   );

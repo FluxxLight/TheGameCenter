@@ -70,6 +70,10 @@ export interface CatalogGame {
   publisher: string;
   release_date: string | null;
   description: string;
+  popularity_score?: number;
+  critic_score?: number;
+  is_featured?: boolean;
+  tags?: string[];
   additional_info: Record<string, unknown>;
   created_at: string;
 }
@@ -118,6 +122,12 @@ export interface UserGameEvent {
   description: string;
   metadata: Record<string, unknown>;
   occurred_at: string;
+}
+
+export interface UserActivityEvent extends UserGameEvent {
+  game_title: string;
+  game_cover_url: string | null;
+  game_platform: string;
 }
 
 export interface UserGameInput {

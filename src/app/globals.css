@@ -3,53 +3,180 @@
 @tailwind utilities;
 
 /* ==========================================================================
-   THE GAME CENTER — MULTI-THEME DESIGN TOKEN ARCHITECTURE
-   Default Flagship Theme: Obsidian Cyber (inspired by official Shield Emblem)
-   Prepared for future full theme switching via [data-theme="..."]
+   THE GAME CENTER — COMPLETE DESIGN TOKEN & MULTI-THEME ENGINE
+   Controls backgrounds, cards, buttons, text, borders, highlights, icons,
+   navigation, active states, and form elements consistently across all pages.
    ========================================================================== */
 
 :root,
 [data-theme='obsidian-cyber'] {
+  /* Identidade Clássica do Ícone Oficial (Ciano Elétrico + Índigo + Obsidiana) */
   --tgc-bg-canvas: 7 10 18;
-  --tgc-bg-surface: 12 17 29;
-  --tgc-bg-elevated: 17 24 39;
-  --tgc-bg-card: 15 21 35;
-  --tgc-border: 38 52 79;
+  --tgc-bg-surface: 13 18 31;
+  --tgc-bg-elevated: 20 28 46;
+  --tgc-bg-card: 15 21 36;
+  --tgc-bg-input: 9 13 24;
+  --tgc-border: 42 59 92;
   --tgc-accent-primary: 0 229 255;
+  --tgc-accent-primary-soft: 165 243 252;
   --tgc-accent-secondary: 99 102 241;
+  --tgc-accent-secondary-soft: 199 210 254;
   --tgc-accent-tertiary: 168 85 247;
-  --tgc-text-primary: 241 245 249;
-  --tgc-text-secondary: 148 163 184;
-  --tgc-text-muted: 100 116 139;
+  --tgc-btn-fg: 6 9 17;
+  --tgc-text-primary: 248 250 252;
+  --tgc-text-secondary: 163 179 204;
+  --tgc-text-muted: 108 125 153;
 }
 
-/* Prepared preset tokens for future Theme Switcher stage */
-[data-theme='crimson-vanguard'] {
-  --tgc-bg-canvas: 12 8 12;
-  --tgc-bg-surface: 20 13 19;
-  --tgc-bg-elevated: 29 19 27;
-  --tgc-bg-card: 24 15 22;
-  --tgc-border: 68 36 50;
-  --tgc-accent-primary: 244 63 94;
+/* 1. Roxo + Laranja + Grafite + Branco */
+[data-theme='purple-orange-graphite'] {
+  --tgc-bg-canvas: 18 19 24;
+  --tgc-bg-surface: 27 29 37;
+  --tgc-bg-elevated: 38 41 52;
+  --tgc-bg-card: 30 32 42;
+  --tgc-bg-input: 21 22 29;
+  --tgc-border: 72 76 96;
+  --tgc-accent-primary: 168 85 247;
+  --tgc-accent-primary-soft: 233 213 255;
   --tgc-accent-secondary: 249 115 22;
-  --tgc-accent-tertiary: 236 72 153;
-  --tgc-text-primary: 248 250 252;
-  --tgc-text-secondary: 168 162 158;
-  --tgc-text-muted: 120 113 108;
+  --tgc-accent-secondary-soft: 254 215 170;
+  --tgc-accent-tertiary: 251 146 60;
+  --tgc-btn-fg: 255 255 255;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 212 216 228;
+  --tgc-text-muted: 148 154 173;
+}
+
+/* 2. Verde + Preto + Branco */
+[data-theme='green-black-white'] {
+  --tgc-bg-canvas: 6 7 7;
+  --tgc-bg-surface: 13 15 14;
+  --tgc-bg-elevated: 22 26 24;
+  --tgc-bg-card: 15 18 17;
+  --tgc-bg-input: 9 11 10;
+  --tgc-border: 45 58 50;
+  --tgc-accent-primary: 34 197 94;
+  --tgc-accent-primary-soft: 220 252 231;
+  --tgc-accent-secondary: 240 253 244;
+  --tgc-accent-secondary-soft: 255 255 255;
+  --tgc-accent-tertiary: 16 185 129;
+  --tgc-btn-fg: 5 9 6;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 212 218 214;
+  --tgc-text-muted: 142 152 146;
+}
+
+/* 3. Azul + Branco + Preto */
+[data-theme='blue-white-black'] {
+  --tgc-bg-canvas: 5 7 12;
+  --tgc-bg-surface: 11 16 27;
+  --tgc-bg-elevated: 18 26 44;
+  --tgc-bg-card: 13 19 33;
+  --tgc-bg-input: 8 11 20;
+  --tgc-border: 42 63 104;
+  --tgc-accent-primary: 59 130 246;
+  --tgc-accent-primary-soft: 219 234 254;
+  --tgc-accent-secondary: 226 232 240;
+  --tgc-accent-secondary-soft: 255 255 255;
+  --tgc-accent-tertiary: 56 189 248;
+  --tgc-btn-fg: 5 8 15;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 206 216 232;
+  --tgc-text-muted: 138 153 178;
+}
+
+/* 4. Verde Neon + Verde Escuro + Preto */
+[data-theme='neon-dark-green'] {
+  --tgc-bg-canvas: 3 9 6;
+  --tgc-bg-surface: 8 24 15;
+  --tgc-bg-elevated: 13 38 24;
+  --tgc-bg-card: 10 29 19;
+  --tgc-bg-input: 5 16 10;
+  --tgc-border: 24 82 50;
+  --tgc-accent-primary: 57 255 20;
+  --tgc-accent-primary-soft: 187 247 208;
+  --tgc-accent-secondary: 16 185 129;
+  --tgc-accent-secondary-soft: 167 243 208;
+  --tgc-accent-tertiary: 163 230 53;
+  --tgc-btn-fg: 3 10 5;
+  --tgc-text-primary: 236 253 245;
+  --tgc-text-secondary: 167 224 190;
+  --tgc-text-muted: 102 158 126;
+}
+
+/* 5. Rosa/Vermelho + Ciano + Amarelo + Preto */
+[data-theme='cyber-pink-cyan-yellow'] {
+  --tgc-bg-canvas: 7 6 11;
+  --tgc-bg-surface: 16 13 25;
+  --tgc-bg-elevated: 25 20 40;
+  --tgc-bg-card: 19 15 30;
+  --tgc-bg-input: 11 9 18;
+  --tgc-border: 76 42 94;
+  --tgc-accent-primary: 255 42 109;
+  --tgc-accent-primary-soft: 254 205 211;
+  --tgc-accent-secondary: 5 217 232;
+  --tgc-accent-secondary-soft: 165 243 252;
+  --tgc-accent-tertiary: 252 238 10;
+  --tgc-btn-fg: 255 255 255;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 214 211 229;
+  --tgc-text-muted: 152 145 176;
+}
+
+/* 6. Vermelho + Preto + Branco + Grafite */
+[data-theme='red-black-graphite'] {
+  --tgc-bg-canvas: 8 8 10;
+  --tgc-bg-surface: 20 21 26;
+  --tgc-bg-elevated: 31 33 41;
+  --tgc-bg-card: 23 24 30;
+  --tgc-bg-input: 13 14 18;
+  --tgc-border: 62 65 78;
+  --tgc-accent-primary: 239 68 68;
+  --tgc-accent-primary-soft: 254 202 202;
+  --tgc-accent-secondary: 228 228 231;
+  --tgc-accent-secondary-soft: 255 255 255;
+  --tgc-accent-tertiary: 248 113 113;
+  --tgc-btn-fg: 255 255 255;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 212 212 218;
+  --tgc-text-muted: 148 150 161;
+}
+
+/* Legacy aliases for smooth backwards compatibility */
+[data-theme='crimson-vanguard'] {
+  --tgc-bg-canvas: 8 8 10;
+  --tgc-bg-surface: 20 21 26;
+  --tgc-bg-elevated: 31 33 41;
+  --tgc-bg-card: 23 24 30;
+  --tgc-bg-input: 13 14 18;
+  --tgc-border: 62 65 78;
+  --tgc-accent-primary: 239 68 68;
+  --tgc-accent-primary-soft: 254 202 202;
+  --tgc-accent-secondary: 249 115 22;
+  --tgc-accent-secondary-soft: 254 215 170;
+  --tgc-accent-tertiary: 250 250 250;
+  --tgc-btn-fg: 255 255 255;
+  --tgc-text-primary: 255 255 255;
+  --tgc-text-secondary: 212 212 218;
+  --tgc-text-muted: 148 150 161;
 }
 
 [data-theme='emerald-matrix'] {
-  --tgc-bg-canvas: 6 13 11;
-  --tgc-bg-surface: 10 21 18;
-  --tgc-bg-elevated: 15 31 26;
-  --tgc-bg-card: 12 25 21;
-  --tgc-border: 30 64 52;
-  --tgc-accent-primary: 16 185 129;
-  --tgc-accent-secondary: 6 182 212;
-  --tgc-accent-tertiary: 132 204 22;
-  --tgc-text-primary: 240 253 244;
-  --tgc-text-secondary: 148 163 184;
-  --tgc-text-muted: 100 116 139;
+  --tgc-bg-canvas: 3 9 6;
+  --tgc-bg-surface: 8 24 15;
+  --tgc-bg-elevated: 13 38 24;
+  --tgc-bg-card: 10 29 19;
+  --tgc-bg-input: 5 16 10;
+  --tgc-border: 24 82 50;
+  --tgc-accent-primary: 57 255 20;
+  --tgc-accent-primary-soft: 187 247 208;
+  --tgc-accent-secondary: 16 185 129;
+  --tgc-accent-secondary-soft: 167 243 208;
+  --tgc-accent-tertiary: 163 230 53;
+  --tgc-btn-fg: 3 10 5;
+  --tgc-text-primary: 236 253 245;
+  --tgc-text-secondary: 167 224 190;
+  --tgc-text-muted: 102 158 126;
 }
 
 @layer base {
@@ -67,27 +194,75 @@
     color: rgb(var(--tgc-text-primary));
     overflow-x: hidden;
     -webkit-font-smoothing: antialiased;
+    transition: background-color 0.25s ease, color 0.25s ease;
+  }
+
+  input,
+  select,
+  textarea {
+    background-color: rgb(var(--tgc-bg-input));
+    color: rgb(var(--tgc-text-primary));
+    border-color: rgb(var(--tgc-border) / 0.65);
+  }
+
+  input:focus-visible,
+  select:focus-visible,
+  textarea:focus-visible,
+  button:focus-visible,
+  a:focus-visible {
+    outline: 2px solid rgb(var(--tgc-accent-primary) / 0.65);
+    outline-offset: 2px;
   }
 }
 
-/* Tactical subtle background grid & radial atmospheric lighting */
+/* Dynamic theme-reactive atmospheric backdrop & cyber grid */
 .tgc-cyber-backdrop {
+  background-color: rgb(var(--tgc-bg-canvas));
   background-image:
-    radial-gradient(circle at 15% 0%, rgba(0, 229, 255, 0.085) 0%, transparent 42%),
-    radial-gradient(circle at 85% 10%, rgba(99, 102, 241, 0.095) 0%, transparent 45%),
-    linear-gradient(rgba(255, 255, 255, 0.018) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(255, 255, 255, 0.018) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 44px 44px, 44px 44px;
+    radial-gradient(
+      circle at 12% 0%,
+      rgb(var(--tgc-accent-primary) / 0.11) 0%,
+      transparent 44%
+    ),
+    radial-gradient(
+      circle at 88% 8%,
+      rgb(var(--tgc-accent-secondary) / 0.1) 0%,
+      transparent 46%
+    ),
+    radial-gradient(
+      circle at 50% 100%,
+      rgb(var(--tgc-accent-tertiary) / 0.06) 0%,
+      transparent 50%
+    ),
+    linear-gradient(rgb(var(--tgc-border) / 0.14) 1px, transparent 1px),
+    linear-gradient(90deg, rgb(var(--tgc-border) / 0.14) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 100% 100%, 44px 44px, 44px 44px;
 }
 
 .tgc-glass-panel {
   background: linear-gradient(
     165deg,
-    rgba(17, 24, 39, 0.88) 0%,
-    rgba(11, 16, 28, 0.94) 100%
+    rgb(var(--tgc-bg-card) / 0.92) 0%,
+    rgb(var(--tgc-bg-canvas) / 0.95) 100%
   );
   backdrop-filter: blur(16px);
-  border: 1px solid rgba(148, 163, 184, 0.12);
+  border: 1px solid rgb(var(--tgc-border) / 0.42);
+}
+
+.tgc-btn-primary {
+  background-image: linear-gradient(
+    135deg,
+    rgb(var(--tgc-accent-primary)) 0%,
+    rgb(var(--tgc-accent-secondary)) 100%
+  );
+  color: rgb(var(--tgc-btn-fg));
+  box-shadow: 0 0 24px -5px rgb(var(--tgc-accent-primary) / 0.45);
+  transition: filter 0.18s ease, transform 0.18s ease, box-shadow 0.18s ease;
+}
+
+.tgc-btn-primary:hover:not(:disabled) {
+  filter: brightness(1.09);
+  box-shadow: 0 0 30px -4px rgb(var(--tgc-accent-primary) / 0.62);
 }
 
 .tgc-card-hover {
@@ -98,12 +273,19 @@
 
 .tgc-card-hover:hover {
   transform: translateY(-3px);
-  border-color: rgba(0, 229, 255, 0.36);
-  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.78),
-    0 0 22px -8px rgba(0, 229, 255, 0.22);
+  border-color: rgb(var(--tgc-accent-primary) / 0.48);
+  box-shadow: 0 14px 34px -12px rgba(0, 0, 0, 0.8),
+    0 0 24px -8px rgb(var(--tgc-accent-primary) / 0.28);
 }
 
-/* Custom sleek dark scrollbar */
+/* Ensure high contrast text on primary gradient CTA buttons across all themes */
+.from-cyan-400.to-indigo-500,
+.from-cyan-500.to-indigo-500,
+.bg-cyan-400.text-slate-950 {
+  color: rgb(var(--tgc-btn-fg)) !important;
+}
+
+/* Custom sleek theme-aware scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
   height: 8px;
@@ -114,10 +296,10 @@
 }
 
 ::-webkit-scrollbar-thumb {
-  background: rgba(100, 116, 139, 0.35);
+  background: rgb(var(--tgc-border) / 0.65);
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: rgba(0, 229, 255, 0.45);
+  background: rgb(var(--tgc-accent-primary) / 0.65);
 }

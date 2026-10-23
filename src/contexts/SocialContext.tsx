@@ -14,8 +14,16 @@ import {
   getSocialOverview,
   listMyConversations,
 } from '@/services/socialService';
+import {
+  ConversationSummary,
+  FriendEntry,
+  FriendRequestEntry,
+} from '@/types/social';
 
 interface SocialContextValue {
+  friends: FriendEntry[];
+  incomingRequests: FriendRequestEntry[];
+  conversations: ConversationSummary[];
   pendingIncomingCount: number;
   unreadMessagesCount: number;
   friendsCount: number;
@@ -23,6 +31,9 @@ interface SocialContextValue {
 }
 
 const SocialContext = createContext<SocialContextValue>({
+  friends: [],
+  incomingRequests: [],
+  conversations: [],
   pendingIncomingCount: 0,
   unreadMessagesCount: 0,
   friendsCount: 0,
@@ -31,12 +42,20 @@ const SocialContext = createContext<SocialContextValue>({
 
 export function SocialProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth();
+  const [friends, setFriends] = useState<FriendEntry[]>([]);
+  const [incomingRequests, setIncomingRequests] = useState<
+    FriendRequestEntry[]
+  >([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [pendingIncomingCount, setPendingIncomingCount] = useState(0);
   const [unreadMessagesCount, setUnreadMessagesCount] = useState(0);
   const [friendsCount, setFriendsCount] = useState(0);
 
   const refreshSocialCounts = useCallback(async () => {
     if (!user) {
+      setFriends([]);
+      setIncomingRequests([]);
+      setConversations([]);
       setPendingIncomingCount(0);
       setUnreadMessagesCount(0);
       setFriendsCount(0);
@@ -44,13 +63,16 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
     }
 
     try {
-      const [overview, conversations] = await Promise.all([
+      const [overview, convs] = await Promise.all([
         getSocialOverview(),
         listMyConversations(),
       ]);
+      setFriends(overview.friends);
+      setIncomingRequests(overview.incoming_requests);
+      setConversations(convs);
       setPendingIncomingCount(overview.incoming_requests.length);
       setFriendsCount(overview.friends.length);
-      const totalUnread = conversations.reduce(
+      const totalUnread = convs.reduce(
         (sum, conv) => sum + (Number(conv.unread_count) || 0),
         0
       );
@@ -99,12 +121,23 @@ export function SocialProvider({ children }: { children: React.ReactNode }) {
 
   const value = useMemo(
     () => ({
+      friends,
+      incomingRequests,
+      conversations,
       pendingIncomingCount,
       unreadMessagesCount,
       friendsCount,
       refreshSocialCounts,
     }),
-    [pendingIncomingCount, unreadMessagesCount, friendsCount, refreshSocialCounts]
+    [
+      friends,
+      incomingRequests,
+      conversations,
+      pendingIncomingCount,
+      unreadMessagesCount,
+      friendsCount,
+      refreshSocialCounts,
+    ]
   );
 
   return (
