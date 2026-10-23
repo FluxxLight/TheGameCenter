@@ -21,12 +21,13 @@ import {
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocial } from '@/contexts/SocialContext';
 
 interface NavItem {
   href: string;
   label: string;
   Icon: React.ComponentType<{ className?: string }>;
-  badge?: string;
+  count?: number;
 }
 
 const PRIMARY_NAV: NavItem[] = [
@@ -36,17 +37,28 @@ const PRIMARY_NAV: NavItem[] = [
   { href: '/perfil', label: 'Meu Perfil', Icon: UserCircle2 },
 ];
 
-const SECONDARY_NAV: NavItem[] = [
-  { href: '/amigos', label: 'Amigos', Icon: Users, badge: 'Em breve' },
-  { href: '/mensagens', label: 'Mensagens', Icon: MessageSquare, badge: 'Em breve' },
-  { href: '/configuracoes', label: 'Configurações', Icon: Settings },
-];
-
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const { user, profile, signOut } = useAuth();
+  const { pendingIncomingCount, unreadMessagesCount } = useSocial();
   const { showToast } = useToast();
+
+  const secondaryNav: NavItem[] = [
+    {
+      href: '/amigos',
+      label: 'Amigos',
+      Icon: Users,
+      count: pendingIncomingCount,
+    },
+    {
+      href: '/mensagens',
+      label: 'Mensagens',
+      Icon: MessageSquare,
+      count: unreadMessagesCount,
+    },
+    { href: '/configuracoes', label: 'Configurações', Icon: Settings },
+  ];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [copiedCode, setCopiedCode] = useState(false);
@@ -179,7 +191,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
               Social &amp; Sistema
             </p>
             <ul className="space-y-1">
-              {SECONDARY_NAV.map(({ href, label, Icon, badge }) => {
+              {secondaryNav.map(({ href, label, Icon, count }) => {
                 const active = isActive(href);
                 return (
                   <li key={href}>
@@ -187,7 +199,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                       href={href}
                       className={`flex items-center justify-between rounded-xl px-3.5 py-2.5 text-sm font-medium transition ${
                         active
-                          ? 'border border-cyan-400/35 bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-white'
+                          ? 'border border-cyan-400/35 bg-gradient-to-r from-cyan-500/20 to-indigo-500/10 text-white shadow-neon-cyan'
                           : 'text-slate-400 hover:bg-white/5 hover:text-white'
                       }`}
                     >
@@ -199,9 +211,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                         />
                         <span>{label}</span>
                       </span>
-                      {badge && (
-                        <span className="rounded-full border border-indigo-400/30 bg-indigo-500/15 px-2 py-0.5 text-[10px] font-semibold text-indigo-300">
-                          {badge}
+                      {typeof count === 'number' && count > 0 && (
+                        <span className="inline-flex h-5 min-w-[20px] items-center justify-center rounded-full bg-cyan-400 px-1.5 font-mono text-[10px] font-bold text-slate-950 shadow-neon-cyan">
+                          {count > 99 ? '99+' : count}
                         </span>
                       )}
                     </Link>
@@ -281,7 +293,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
           </div>
 
           <nav className="flex-1 space-y-1.5 overflow-y-auto">
-            {[...PRIMARY_NAV, ...SECONDARY_NAV].map(({ href, label, Icon, badge }) => {
+            {[...PRIMARY_NAV, ...secondaryNav].map(({ href, label, Icon, count }) => {
               const active = isActive(href);
               return (
                 <Link
@@ -298,9 +310,9 @@ export function AppShell({ children }: { children: React.ReactNode }) {
                     <Icon className="h-4 w-4 text-cyan-400" />
                     <span>{label}</span>
                   </span>
-                  {badge && (
-                    <span className="rounded-full bg-indigo-500/20 px-2 py-0.5 text-[10px] text-indigo-300">
-                      {badge}
+                  {typeof count === 'number' && count > 0 && (
+                    <span className="rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-[10px] font-bold text-slate-950">
+                      {count}
                     </span>
                   )}
                 </Link>
@@ -327,18 +339,39 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
       {/* Mobile Bottom Quick Dock */}
       <nav className="fixed inset-x-0 bottom-0 z-40 flex items-center justify-around border-t border-white/10 bg-slate-950/95 px-2 py-2 backdrop-blur-xl md:hidden">
-        {PRIMARY_NAV.map(({ href, label, Icon }) => {
+        {[
+          { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+          { href: '/biblioteca', label: 'Biblioteca', Icon: Library },
+          {
+            href: '/amigos',
+            label: 'Amigos',
+            Icon: Users,
+            count: pendingIncomingCount,
+          },
+          {
+            href: '/mensagens',
+            label: 'Chat',
+            Icon: MessageSquare,
+            count: unreadMessagesCount,
+          },
+          { href: '/perfil', label: 'Perfil', Icon: UserCircle2 },
+        ].map(({ href, label, Icon, count }) => {
           const active = isActive(href);
           return (
             <Link
               key={href}
               href={href}
-              className={`flex flex-col items-center gap-1 rounded-xl px-3 py-1.5 text-[10px] font-medium transition ${
+              className={`relative flex flex-col items-center gap-1 rounded-xl px-2.5 py-1.5 text-[10px] font-medium transition ${
                 active ? 'text-cyan-300' : 'text-slate-400'
               }`}
             >
               <Icon className="h-4 w-4" />
-              <span>{label.replace('Minha ', '').replace('Meu ', '')}</span>
+              <span>{label}</span>
+              {typeof count === 'number' && count > 0 && (
+                <span className="absolute right-1 top-0.5 flex h-4 min-w-[16px] items-center justify-center rounded-full bg-cyan-400 px-1 font-mono text-[9px] font-bold text-slate-950">
+                  {count > 9 ? '9+' : count}
+                </span>
+              )}
             </Link>
           );
         })}

@@ -1,0 +1,30 @@
+-- =========================================================================
+-- ETAPA 3: SISTEMA SOCIAL COMPLETO (AMIGOS, MENSAGENS INDIVIDUAIS E GRUPOS)
+-- Target Project: the-game-center (ngtxlrpeetsmljbylbvz)
+-- Synced with applied Supabase migrations:
+--   - social_friends_messages_groups
+--   - fix_conversation_member_role_handoff
+-- =========================================================================
+
+-- Tables:
+--   public.friendships (FORCE ROW LEVEL SECURITY)
+--   public.conversations (FORCE ROW LEVEL SECURITY)
+--   public.conversation_members (FORCE ROW LEVEL SECURITY)
+--   public.conversation_messages (FORCE ROW LEVEL SECURITY)
+--
+-- Backend-validated SECURITY DEFINER RPCs:
+--   public.find_player_by_code(p_code TEXT)
+--   public.send_friend_request(p_target_user_id UUID)
+--   public.respond_friend_request(p_friendship_id UUID, p_decision TEXT)
+--   public.remove_friendship(p_friendship_id UUID)
+--   public.get_social_overview()
+--   public.open_or_create_direct_conversation(p_friend_id UUID)
+--   public.create_group_conversation(p_name TEXT, p_member_ids UUID[], p_description TEXT)
+--   public.update_group_info(p_conversation_id UUID, p_name TEXT, p_description TEXT)
+--   public.add_group_members(p_conversation_id UUID, p_friend_ids UUID[])
+--   public.remove_group_member(p_conversation_id UUID, p_target_user_id UUID)
+--   public.leave_group_conversation(p_conversation_id UUID)
+--   public.send_conversation_message(p_conversation_id UUID, p_body TEXT)
+--   public.mark_conversation_read(p_conversation_id UUID)
+--   public.list_my_conversations()
+--   public.get_conversation_thread(p_conversation_id UUID, p_limit INT)

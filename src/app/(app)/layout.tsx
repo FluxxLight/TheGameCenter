@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { BrandLogo } from '@/components/brand/BrandLogo';
 import { AppShell } from '@/components/layout/AppShell';
 import { useAuth } from '@/contexts/AuthContext';
+import { SocialProvider } from '@/contexts/SocialContext';
 
 export default function ProtectedAppLayout({
   children,
@@ -42,5 +43,9 @@ export default function ProtectedAppLayout({
     return null;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <SocialProvider>
+      <AppShell>{children}</AppShell>
+    </SocialProvider>
+  );
 }

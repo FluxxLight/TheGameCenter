@@ -23,6 +23,7 @@ import { GameCover } from '@/components/ui/GameCover';
 import { StatusBadge } from '@/components/ui/StatusBadge';
 import { useToast } from '@/components/ui/ToastProvider';
 import { useAuth } from '@/contexts/AuthContext';
+import { useSocial } from '@/contexts/SocialContext';
 import {
   addUserGame,
   computeLibraryStats,
@@ -39,6 +40,7 @@ function formatBrDate(iso: string | null): string {
 
 export default function DashboardPage() {
   const { user, profile } = useAuth();
+  const { friendsCount, pendingIncomingCount, unreadMessagesCount } = useSocial();
   const { showToast } = useToast();
 
   const [games, setGames] = useState<UserGame[]>([]);
@@ -435,10 +437,10 @@ export default function DashboardPage() {
         </div>
       )}
 
-      {/* Shortcuts to Library, Profile & Upcoming Social Modules */}
+      {/* Shortcuts to Library, Profile & Active Social Hub */}
       <section className="border-t border-white/10 pt-6">
         <h2 className="mb-4 font-display text-xl font-bold uppercase tracking-wider text-slate-200">
-          Atalhos da Plataforma &amp; Próximas Áreas Sociais
+          Atalhos da Plataforma &amp; Rede Social Gamer
         </h2>
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Link
@@ -475,32 +477,54 @@ export default function DashboardPage() {
 
           <Link
             href="/amigos"
-            className="tgc-glass-panel tgc-card-hover flex items-center gap-3.5 rounded-2xl p-4"
+            className="tgc-glass-panel tgc-card-hover flex items-center justify-between gap-3 rounded-2xl p-4"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
-              <Users className="h-5 w-5" />
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-indigo-500/15 text-indigo-300">
+                <Users className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-display text-base font-bold text-white">
+                  Amigos ({friendsCount})
+                </p>
+                <p className="text-xs text-indigo-300">
+                  {pendingIncomingCount > 0
+                    ? `${pendingIncomingCount} ${pendingIncomingCount === 1 ? 'solicitação pendente' : 'solicitações pendentes'}`
+                    : 'Buscar por código único'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-display text-base font-bold text-white">
-                Amigos &amp; Conexões
-              </p>
-              <p className="text-xs text-indigo-300">Preparado para etapa social</p>
-            </div>
+            {pendingIncomingCount > 0 && (
+              <span className="rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-xs font-bold text-slate-950 shadow-neon-cyan">
+                {pendingIncomingCount}
+              </span>
+            )}
           </Link>
 
           <Link
             href="/mensagens"
-            className="tgc-glass-panel tgc-card-hover flex items-center gap-3.5 rounded-2xl p-4"
+            className="tgc-glass-panel tgc-card-hover flex items-center justify-between gap-3 rounded-2xl p-4"
           >
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300">
-              <MessageSquare className="h-5 w-5" />
+            <div className="flex items-center gap-3.5">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-purple-500/15 text-purple-300">
+                <MessageSquare className="h-5 w-5" />
+              </div>
+              <div>
+                <p className="font-display text-base font-bold text-white">
+                  Mensagens &amp; Grupos
+                </p>
+                <p className="text-xs text-purple-300">
+                  {unreadMessagesCount > 0
+                    ? `${unreadMessagesCount} ${unreadMessagesCount === 1 ? 'nova mensagem' : 'novas mensagens'}`
+                    : 'Chats diretos e grupos privados'}
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-display text-base font-bold text-white">
-                Mensagens Gamer
-              </p>
-              <p className="text-xs text-purple-300">Preparado para etapa social</p>
-            </div>
+            {unreadMessagesCount > 0 && (
+              <span className="rounded-full bg-cyan-400 px-2 py-0.5 font-mono text-xs font-bold text-slate-950 shadow-neon-cyan">
+                {unreadMessagesCount}
+              </span>
+            )}
           </Link>
         </div>
       </section>
